@@ -4,13 +4,13 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { RouterView } from 'vue-router';
+<script setup>
+import { RouterView } from 'vue-router'
 </script>
 
 <style>
 #app {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 * {
