@@ -98,19 +98,19 @@
                   <div v-for="week in calendarWeeks" :key="week.weekIndex" class="calendar-week">
                       <div
                           v-for="day in week.days"
-                          :key="day.date || day.emptyKey"
+                          :key="day.date"
                           class="full-calendar-day"
                           :class="{
                               'active': selectedDate === day.date,
                               'is-today': day.isToday,
-                              'other-month': day.otherMonth,
-                              'empty': !day.date
+                              'other-month': day.otherMonth
                           }"
-                          @click="day.date && selectDateFromFullCalendar(day.date)"
+                          @click="selectDateFromFullCalendar(day.date)"
                       >
-                          <div v-if="day.date" class="day-content">
+                          <div class="day-content">
                               <div class="day-number">{{ day.number }}</div>
-                              <div v-if="day.orderStats && day.orderStats.total" class="day-badges">
+                              <!-- Показываем бейджи только для текущего месяца -->
+                              <div v-if="day.orderStats && day.orderStats.total && !day.otherMonth" class="day-badges">
                                 <span v-if="day.orderStats.inProgress" class="badge in-progress">{{ day.orderStats.inProgress }}</span>
                                 <span v-if="day.orderStats.completed" class="badge completed">{{ day.orderStats.completed }}</span>
                                 <span v-if="day.orderStats.delivered" class="badge delivered">{{ day.orderStats.delivered }}</span>
@@ -136,7 +136,7 @@
         @click="createOrder"
       ></v-btn>
       
-      <!-- ОБНОВЛЕНО: FAB календарь с долгим нажатием и динамической иконкой -->
+      <!-- FAB календарь с долгим нажатием и динамической иконкой -->
       <v-tooltip location="left">
         <template v-slot:activator="{ props }">
           <v-btn 
@@ -232,7 +232,7 @@ const endLongPress = () => {
   clearTimeout(longPressTimer);
 };
 
-// ДОБАВЛЕНО: Функция для правильного форматирования локальной даты
+// Функция для правильного форматирования локальной даты
 const getLocalDateString = (date) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -243,7 +243,7 @@ const getLocalDateString = (date) => {
 const currentDate = ref(new Date());
 const today = new Date();
 today.setHours(0, 0, 0, 0);
-const todayStr = getLocalDateString(today); // ИСПРАВЛЕНО: используем локальную дату
+const todayStr = getLocalDateString(today);
 
 const currentYear = computed(() => currentDate.value.getFullYear());
 const currentMonth = computed(() => currentDate.value.getMonth());
@@ -252,13 +252,12 @@ const currentMonthName = computed(() => {
     return monthNames[currentMonth.value];
 });
 
-// ИСПРАВЛЕНО: локальное форматирование дат в мини календаре
 const weekDays = computed(() => {
   const dayNames = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
   return Array.from({ length: 29 }, (_, i) => {
     const d = new Date();
     d.setDate(today.getDate() + i - 14);
-    const ds = getLocalDateString(d); // ИСПРАВЛЕНО: используем локальную дату
+    const ds = getLocalDateString(d);
     const dayOrders = orders.value.filter(o => {
       if (sortBy.value === 'deadline') {
         return o.deadline?.startsWith(ds);
@@ -281,7 +280,7 @@ const weekDays = computed(() => {
   });
 });
 
-// ИСПРАВЛЕНО: локальное форматирование дат в полном календаре
+// ИСПРАВЛЕНО: показываем дни из соседних месяцев вместо пустых ячеек
 const calendarWeeks = computed(() => {
     const year = currentYear.value;
     const month = currentMonth.value;
@@ -294,38 +293,31 @@ const calendarWeeks = computed(() => {
         const week = { weekIndex, days: [] };
         for (let i = 0; i < 7; i++) {
             const currentCalendarDate = new Date(startDate);
-            const dateStr = getLocalDateString(currentCalendarDate); // ИСПРАВЛЕНО: используем локальную дату
+            const dateStr = getLocalDateString(currentCalendarDate);
             const isCurrentMonth = currentCalendarDate.getMonth() === month;
 
-            if (isCurrentMonth) {
-                const dayOrders = orders.value.filter(o => {
-                  if (sortBy.value === 'deadline') {
-                    return o.deadline?.startsWith(dateStr);
-                  } else {
-                    return o.createDate?.startsWith(dateStr);
-                  }
-                });
-                week.days.push({
-                    date: dateStr,
-                    number: currentCalendarDate.getDate(),
-                    isToday: dateStr === todayStr,
-                    otherMonth: false,
-                    orderStats: {
-                      total: dayOrders.length,
-                      inProgress: dayOrders.filter(o => o.status === 'in_progress').length,
-                      completed: dayOrders.filter(o => o.status === 'completed').length,
-                      delivered: dayOrders.filter(o => o.status === 'delivered').length
-                    }
-                });
-            } else {
-                week.days.push({
-                    date: null,
-                    number: currentCalendarDate.getDate(),
-                    otherMonth: true,
-                    emptyKey: `w${weekIndex}-i${i}`,
-                    isToday: false,
-                });
-            }
+            // ИЗМЕНЕНО: всегда показываем дату, даже если она из другого месяца
+            const dayOrders = orders.value.filter(o => {
+              if (sortBy.value === 'deadline') {
+                return o.deadline?.startsWith(dateStr);
+              } else {
+                return o.createDate?.startsWith(dateStr);
+              }
+            });
+
+            week.days.push({
+                date: dateStr, // ИЗМЕНЕНО: всегда есть дата
+                number: currentCalendarDate.getDate(),
+                isToday: dateStr === todayStr,
+                otherMonth: !isCurrentMonth, // ИЗМЕНЕНО: true для дней из других месяцев
+                orderStats: {
+                  total: dayOrders.length,
+                  inProgress: dayOrders.filter(o => o.status === 'in_progress').length,
+                  completed: dayOrders.filter(o => o.status === 'completed').length,
+                  delivered: dayOrders.filter(o => o.status === 'delivered').length
+                }
+            });
+
             startDate.setDate(startDate.getDate() + 1);
         }
         weeks.push(week);
@@ -333,7 +325,6 @@ const calendarWeeks = computed(() => {
     return weeks;
 });
 
-// filteredOrders с учетом сортировки
 const filteredOrders = computed(() => {
   if (!selectedDate.value) {
     return [...orders.value]
@@ -385,7 +376,6 @@ const selectDate = (date) => {
   }
 };
 
-// ИСПРАВЛЕНО: второе нажатие для отмены выбора в большом календаре  
 const selectDateFromFullCalendar = (date) => {
     if (selectedDate.value === date) {
       selectedDate.value = null; 
@@ -539,8 +529,8 @@ onMounted(async () => {
   flex-grow: 1;
   min-height: 0;
   overflow-y: auto;
-  scrollbar-width: none; /* ДОБАВЛЕНО: убрать полосу прокрутки Firefox */
-  -ms-overflow-style: none; /* ДОБАВЛЕНО: убрать полосу прокрутки IE */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   margin: 8px;
   padding: 8px;
   position: relative;
@@ -553,7 +543,6 @@ onMounted(async () => {
     0 0 0 1px rgba(0, 0, 0, 0.05);
 }
 
-/* ДОБАВЛЕНО: убрать полосу прокрутки Webkit */
 .orders-list-container::-webkit-scrollbar {
   display: none;
 }
@@ -676,7 +665,6 @@ onMounted(async () => {
   border: 1px solid rgba(var(--v-theme-surface), 0.5);
 }
 
-/* ИСПРАВЛЕНО: синхронизированы CSS классы статусов */
 .badge.in-progress { background-color: #FB8C00; }
 .badge.completed { background-color: #1976D2; }
 .badge.delivered { background-color: #43A047; }
@@ -712,7 +700,6 @@ onMounted(async () => {
     z-index: 1002;
 }
 
-/* ИСПРАВЛЕНО: FAB календарь не перекрывает полный календарь */
 .fab-calendar-hidden {
     transform: translateX(100px);
     opacity: 0;
@@ -720,7 +707,6 @@ onMounted(async () => {
     z-index: -1 !important;
 }
 
-/* ИСПРАВЛЕНО: увеличен z-index полного календаря */
 .full-calendar-section {
     position: absolute;
     bottom: 0;
@@ -827,7 +813,7 @@ onMounted(async () => {
     padding-top: 2px;
 }
 
-.full-calendar-day:not(.empty):not(.other-month):hover {
+.full-calendar-day:not(.other-month):hover {
     background-color: rgba(var(--v-theme-primary), 0.08);
 }
 
@@ -835,16 +821,19 @@ onMounted(async () => {
     background-color: rgba(var(--v-theme-primary), 0.12);
 }
 
-/* ИСПРАВЛЕНО: убран кружок у текущей даты в полном календаре */
 .full-calendar-day.is-today .day-number {
     color: rgb(var(--v-theme-primary)) !important;
     font-weight: 700 !important;
 }
 
-.full-calendar-day.other-month,
-.full-calendar-day.empty {
-    opacity: 0.3;
-    cursor: default;
+/* ДОБАВЛЕНО: стили для дней других месяцев */
+.full-calendar-day.other-month {
+    color: rgba(var(--v-theme-on-surface), 0.38) !important;
+    opacity: 0.6;
+}
+
+.full-calendar-day.other-month:hover {
+    background-color: rgba(var(--v-theme-on-surface), 0.04) !important;
 }
 
 .full-calendar-day .day-number {
