@@ -1,0 +1,272 @@
+/* Глобальные переменные для цветов Material Design 3. Могут быть настроены. */
+:root {
+  /* Базовые переменные будут заменены через ThemeStore */
+  --theme-primary: #1E88E5;
+  --theme-secondary: #42A5F5;
+  --theme-accent: #2196F3;
+  --theme-background: #FFFFFF;
+  --theme-surface: #FAFAFA;
+  --theme-on-primary: #FFFFFF;
+  --theme-on-secondary: #000000;
+}
+
+body {
+  margin: 0;
+  font-family: 'Roboto', sans-serif;
+  background-color: var(--theme-background);
+  color: var(--theme-on-surface);
+  /* Улучшенная прокрутка на мобильных */
+  -webkit-overflow-scrolling: touch;
+  overflow-scrolling: touch;
+}
+
+/* Убираем стандартные стили скроллбара для более чистого вида */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* Глобальные кастомные классы */
+.no-rounded {
+  border-radius: 0 !important;
+}
+
+.no-rounded .v-card {
+  border-radius: 0 !important;
+}
+
+.no-rounded .v-btn {
+  border-radius: 0 !important;
+}
+
+/* Улучшенные анимации */
+.v-card {
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+}
+
+.v-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.v-btn {
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+}
+
+.v-btn:hover {
+  transform: translateY(-1px);
+}
+
+/* Мобильные оптимизации */
+@media (max-width: 768px) {
+  /* Увеличиваем размер кликабельных областей */
+  .v-btn {
+    min-height: 48px !important;
+  }
+  
+  .v-list-item {
+    min-height: 56px !important;
+  }
+  
+  /* Улучшаем отзывчивость форм */
+  .v-text-field,
+  .v-select,
+  .v-autocomplete {
+    margin-bottom: 16px;
+  }
+  
+  /* Оптимизируем модальные окна для мобильных */
+  .v-dialog {
+    margin: 8px !important;
+  }
+  
+  .v-dialog .v-card {
+    margin: 0 !important;
+  }
+}
+
+/* Touch-friendly улучшения */
+@media (pointer: coarse) {
+  .v-btn {
+    min-height: 48px !important;
+    min-width: 48px !important;
+  }
+  
+  .v-chip {
+    min-height: 36px !important;
+  }
+  
+  .v-tab {
+    min-height: 48px !important;
+  }
+}
+
+/* Кастомные компоненты */
+.swipe-card {
+  transform: translateX(0);
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.swipe-card.swipe-left {
+  transform: translateX(-100px);
+}
+
+.swipe-card.swipe-right {
+  transform: translateX(100px);
+}
+
+/* Skeleton загрузчики */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Улучшенные тени */
+.elevation-custom {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), 
+              0 0 1px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Кастомные анимации появления */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+
+.slide-enter-active {
+  transition: all 0.3s ease;
+}
+
+.slide-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-enter-from {
+  transform: translateX(30px);
+  opacity: 0;
+}
+
+.slide-leave-to {
+  transform: translateX(-30px);
+  opacity: 0;
+}
+
+/* Кастомизация Vuetify компонентов */
+.v-application {
+  line-height: 1.5;
+}
+
+.v-card-title {
+  font-weight: 600 !important;
+}
+
+.v-btn--elevated {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12) !important;
+}
+
+.v-btn--elevated:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.16) !important;
+}
+
+/* Кастомизация цветов статусов */
+.status-in-progress {
+  background-color: #FF9800 !important;
+  color: white !important;
+}
+
+.status-completed {
+  background-color: #2196F3 !important;
+  color: white !important;
+}
+
+.status-delivered {
+  background-color: #4CAF50 !important;
+  color: white !important;
+}
+
+.status-cancelled {
+  background-color: #F44336 !important;
+  color: white !important;
+}
+
+/* Responsive утилиты */
+.mobile-only {
+  display: none;
+}
+
+.desktop-only {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .mobile-only {
+    display: block;
+  }
+  
+  .desktop-only {
+    display: none;
+  }
+}
+
+/* Улучшения для accessibility */
+.v-btn:focus-visible {
+  outline: 2px solid var(--theme-primary);
+  outline-offset: 2px;
+}
+
+.v-card:focus-visible {
+  outline: 2px solid var(--theme-primary);
+  outline-offset: 2px;
+}
+
+/* Print стили */
+@media print {
+  .mobile-navigation,
+  .fab-create-order,
+  .v-btn {
+    display: none !important;
+  }
+  
+  .v-card {
+    box-shadow: none !important;
+    border: 1px solid #ddd;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .v-card {
+    border: 1px solid;
+  }
+  
+  .v-btn {
+    border: 1px solid;
+  }
+}
