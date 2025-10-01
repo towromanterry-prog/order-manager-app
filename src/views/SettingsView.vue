@@ -1,0 +1,399 @@
+<template>
+  <v-container class="settings-container">
+    <v-card flat>
+      <v-card-title class="d-flex align-center pa-6">
+        <v-icon size="28" class="mr-3">mdi-tune</v-icon>
+        <h1 class="text-h5 font-weight-medium">Настройки приложения</h1>
+      </v-card-title>
+
+      <v-card-text class="pa-0">
+        <!-- Настройки обязательных полей -->
+        <v-expansion-panels variant="accordion" class="mb-4">
+          <v-expansion-panel>
+            <v-expansion-panel-title>
+              <v-icon class="mr-3">mdi-form-select</v-icon>
+              Обязательные поля для заказов
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <v-card flat>
+                <v-card-text>
+                  <p class="text-body-2 text-medium-emphasis mb-4">
+                    Выберите, какие поля должны быть обязательными при создании заказа.
+                  </p>
+                  
+                  <div class="required-fields-grid">
+                    <v-checkbox
+                      v-model="settingsStore.requiredFields.clientName"
+                      label="Имя клиента"
+                      color="primary"
+                      hide-details
+                      @change="updateRequiredFields"
+                    ></v-checkbox>
+                    
+                    <v-checkbox
+                      v-model="settingsStore.requiredFields.phone"
+                      label="Телефон"
+                      color="primary"
+                      hide-details
+                      @change="updateRequiredFields"
+                    ></v-checkbox>
+                    
+                    <v-checkbox
+                      v-model="settingsStore.requiredFields.services"
+                      label="Услуги"
+                      color="primary"
+                      hide-details
+                      @change="updateRequiredFields"
+                    ></v-checkbox>
+                    
+                    <v-checkbox
+                      v-model="settingsStore.requiredFields.deadline"
+                      label="Срок выполнения"
+                      color="primary"
+                      hide-details
+                      @change="updateRequiredFields"
+                    ></v-checkbox>
+                    
+                    <v-checkbox
+                      v-model="settingsStore.requiredFields.notes"
+                      label="Заметки"
+                      color="primary"
+                      hide-details
+                      @change="updateRequiredFields"
+                    ></v-checkbox>
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
+
+        <!-- Смена темы -->
+        <v-expansion-panels variant="accordion" class="mb-4">
+          <v-expansion-panel>
+            <v-expansion-panel-title>
+              <v-icon class="mr-3">mdi-palette</v-icon>
+              Тема оформления
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <v-card flat>
+                <v-card-text>
+                  <p class="text-body-2 text-medium-emphasis mb-4">
+                    Выберите цветовую схему приложения.
+                  </p>
+                  <v-btn-toggle
+                    :model-value="themeStore.theme"
+                    @update:model-value="themeStore.setTheme"
+                    color="primary"
+                    variant="outlined"
+                    divided
+                    class="d-flex"
+                  >
+                    <v-btn value="light" class="flex-grow-1">
+                      <v-icon start>mdi-weather-sunny</v-icon>
+                      Светлая
+                    </v-btn>
+                    <v-btn value="dark" class="flex-grow-1">
+                      <v-icon start>mdi-weather-night</v-icon>
+                      Темная
+                    </v-btn>
+                  </v-btn-toggle>
+                </v-card-text>
+              </v-card>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
+
+        <!-- FAQ -->
+        <v-expansion-panels variant="accordion" class="mb-4">
+          <v-expansion-panel>
+            <v-expansion-panel-title>
+              <v-icon class="mr-3">mdi-help-circle-outline</v-icon>
+              Часто задаваемые вопросы (FAQ)
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <v-card flat>
+                <v-card-text>
+                  <v-expansion-panels variant="inset">
+                    <v-expansion-panel
+                      v-for="(faq, index) in faqList"
+                      :key="index"
+                    >
+                      <v-expansion-panel-title>
+                        {{ faq.question }}
+                      </v-expansion-panel-title>
+                      <v-expansion-panel-text>
+                        <p v-html="faq.answer"></p>
+                      </v-expansion-panel-text>
+                    </v-expansion-panel>
+                  </v-expansion-panels>
+                </v-card-text>
+              </v-card>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
+
+        <!-- Управление клиентами -->
+        <v-expansion-panels variant="accordion" class="mb-4">
+          <v-expansion-panel>
+            <v-expansion-panel-title>
+              <v-icon class="mr-3">mdi-account-cog</v-icon>
+              Управление базой клиентов
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <v-card flat>
+                <v-card-text>
+                  <p class="text-body-2 text-medium-emphasis mb-4">
+                    Настройки автокомплита и базы клиентов.
+                  </p>
+                  
+                  <v-row>
+                    <v-col cols="12" md="6">
+                      <v-card variant="outlined">
+                        <v-card-text class="text-center">
+                          <v-icon size="48" color="primary" class="mb-2">mdi-database</v-icon>
+                          <h3 class="text-h6 mb-2">База клиентов</h3>
+                          <p class="text-body-2 mb-3">
+                            {{ clientsStore.clients.length }} клиентов в базе
+                          </p>
+                          <v-btn 
+                            color="primary" 
+                            variant="outlined"
+                            @click="showClientsManager = true"
+                          >
+                            Управление
+                          </v-btn>
+                        </v-card-text>
+                      </v-card>
+                    </v-col>
+                    
+                    <v-col cols="12" md="6">
+                      <v-card variant="outlined">
+                        <v-card-text class="text-center">
+                          <v-icon size="48" color="error" class="mb-2">mdi-delete-sweep</v-icon>
+                          <h3 class="text-h6 mb-2">Очистка данных</h3>
+                          <p class="text-body-2 mb-3">
+                            Удалить всех клиентов из базы
+                          </p>
+                          <v-btn 
+                            color="error" 
+                            variant="outlined"
+                            @click="clearAllClients"
+                          >
+                            Очистить базу
+                          </v-btn>
+                        </v-card-text>
+                      </v-card>
+                    </v-col>
+                  </v-row>
+                </v-card-text>
+              </v-card>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
+
+        <!-- Дополнительные настройки -->
+        <v-expansion-panels variant="accordion">
+          <v-expansion-panel>
+            <v-expansion-panel-title>
+              <v-icon class="mr-3">mdi-cog</v-icon>
+              Дополнительные настройки
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <v-card flat>
+                <v-card-text>
+                  <v-switch
+                    v-model="settingsStore.appSettings.enableHapticFeedback"
+                    label="Тактильная обратная связь"
+                    color="primary"
+                    inset
+                    @change="updateAppSettings"
+                  ></v-switch>
+                  
+                  <v-switch
+                    v-model="settingsStore.appSettings.enablePullToRefresh"
+                    label="Обновление потягиванием"
+                    color="primary"
+                    inset
+                    @change="updateAppSettings"
+                  ></v-switch>
+                  
+                  <v-switch
+                    v-model="settingsStore.appSettings.autoSaveFormDrafts"
+                    label="Автосохранение черновиков"
+                    color="primary"
+                    inset
+                    @change="updateAppSettings"
+                  ></v-switch>
+                  
+                  <v-switch
+                    v-model="settingsStore.appSettings.showCompletedOrders"
+                    label="Показывать выполненные заказы"
+                    color="primary"
+                    inset
+                    @change="updateAppSettings"
+                  ></v-switch>
+                  
+                  <v-switch
+                    v-model="settingsStore.appSettings.compactMode"
+                    label="Компактный режим"
+                    color="primary"
+                    inset
+                    @change="updateAppSettings"
+                  ></v-switch>
+                  
+                  <v-divider class="my-4"></v-divider>
+                  
+                  <v-btn
+                    color="error"
+                    variant="outlined"
+                    @click="resetAllSettings"
+                    class="mr-2"
+                  >
+                    <v-icon class="mr-2">mdi-refresh</v-icon>
+                    Сбросить настройки
+                  </v-btn>
+                </v-card-text>
+              </v-card>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
+      </v-card-text>
+    </v-card>
+
+    <!-- Диалог управления клиентами -->
+    <v-dialog v-model="showClientsManager" max-width="800">
+      <v-card>
+        <v-card-title>Управление клиентами</v-card-title>
+        <v-card-text>
+          <v-list>
+            <v-list-item
+              v-for="client in clientsStore.getRecentClients(50)"
+              :key="client.id"
+            >
+              <v-list-item-title>{{ client.name }}</v-list-item-title>
+              <v-list-item-subtitle>{{ client.phone }} • {{ client.totalOrders }} заказов</v-list-item-subtitle>
+              <template v-slot:append>
+                <v-btn
+                  icon="mdi-delete"
+                  variant="text"
+                  color="error"
+                  @click="deleteClient(client.phone)"
+                ></v-btn>
+              </template>
+            </v-list-item>
+          </v-list>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn @click="showClientsManager = false">Закрыть</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </v-container>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+import { useThemeStore } from '@/stores/themeStore';
+import { useClientsStore } from '@/stores/clientsStore';
+import { useSettingsStore } from '@/stores/settingsStore';
+import { useConfirmationStore } from '@/stores/confirmationStore';
+
+const themeStore = useThemeStore();
+const clientsStore = useClientsStore();
+const settingsStore = useSettingsStore();
+const confirmationStore = useConfirmationStore();
+
+const showClientsManager = ref(false);
+
+const faqList = ref([
+  {
+    question: 'Как создать новый заказ?',
+    answer: 'Нажмите на кнопку "+" в правом нижнем углу главной страницы или выберите дату в календаре и нажмите "Добавить заказ".'
+  },
+  {
+    question: 'Как изменить статус заказа?',
+    answer: 'Нажмите на индикатор статуса в карточке заказа. Статус будет изменяться циклично: В работе → Выполнено → Сдан → В работе.'
+  },
+  {
+    question: 'Что такое автокомплит клиентов?',
+    answer: 'При вводе имени или телефона клиента система автоматически предложит существующих клиентов из базы данных для быстрого заполнения формы.'
+  },
+  {
+    question: 'Как добавить кастомную иконку для услуги?',
+    answer: 'В разделе "Услуги и теги" → "Услуги" нажмите "Редактировать" возле нужной услуги и выберите иконку из предложенных или введите код MDI иконки.'
+  },
+  {
+    question: 'Как работает синхронизация статусов?',
+    answer: 'Когда все услуги в заказе помечены как "Выполнено", заказ автоматически становится "Выполненным". При изменении статуса заказа на более высокий, все услуги также обновляются.'
+  },
+  {
+    question: 'Можно ли восстановить удаленные данные?',
+    answer: 'Нет, все данные хранятся локально в браузере. После удаления восстановление невозможно. Рекомендуется регулярно создавать резервные копии важной информации.'
+  }
+]);
+
+const updateRequiredFields = () => {
+  settingsStore.updateRequiredFields(settingsStore.requiredFields);
+};
+
+const updateAppSettings = () => {
+  settingsStore.updateAppSettings(settingsStore.appSettings);
+};
+
+const clearAllClients = async () => {
+  const confirmed = await confirmationStore.open(
+    'Очистка базы клиентов',
+    'Вы уверены, что хотите удалить всех клиентов из базы данных? Это действие нельзя отменить.'
+  );
+  
+  if (confirmed) {
+    clientsStore.clients = [];
+    clientsStore.saveClients();
+  }
+};
+
+const deleteClient = async (phone) => {
+  const client = clientsStore.getClientByPhone(phone);
+  const confirmed = await confirmationStore.open(
+    'Удаление клиента',
+    `Вы уверены, что хотите удалить клиента "${client.name}"?`
+  );
+  
+  if (confirmed) {
+    clientsStore.deleteClient(phone);
+  }
+};
+
+const resetAllSettings = async () => {
+  const confirmed = await confirmationStore.open(
+    'Сброс настроек',
+    'Вы уверены, что хотите сбросить все настройки к значениям по умолчанию?'
+  );
+  
+  if (confirmed) {
+    settingsStore.resetSettings();
+    themeStore.setTheme('light'); // Сбрасываем на светлую тему
+  }
+};
+</script>
+
+<style scoped>
+.settings-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.required-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 600px) {
+  .required-fields-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
