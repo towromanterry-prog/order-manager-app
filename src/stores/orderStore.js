@@ -108,29 +108,34 @@ export const useOrderStore = defineStore('orders', () => {
     const syncSettings = settingsStore.appSettings.syncServiceToOrderStatus;
     const orderStatusSettings = settingsStore.appSettings.orderStatuses;
 
-    if (!order.services || order.services.length === 0) return;
+    if (!order.services || order.services.length === 0) {
+      return;
+    }
 
     const serviceStatuses = order.services.map(s => s.status);
-    const statusesToSync = ['completed', 'in_progress', 'additional', 'accepted']; // Order of precedence
+    const firstServiceStatus = serviceStatuses[0];
 
-    // Check if all services have the same status and if that status is enabled for sync.
-    for (const status of statusesToSync) {
-      if (syncSettings[status] && orderStatusSettings[status] && serviceStatuses.every(s => s === status)) {
-        if (order.status !== status) {
-          order.status = status;
-        }
-        return; // Sync complete, exit.
-      }
+    // Rule 1: All services must have the exact same status.
+    const allServicesHaveSameStatus = serviceStatuses.every(s => s === firstServiceStatus);
+    if (!allServicesHaveSameStatus) {
+      return; // Exit if statuses are mixed.
+    }
+
+    const unanimousStatus = firstServiceStatus;
+
+    // Rule 2: The target status MUST be active in the order status settings.
+    if (!orderStatusSettings[unanimousStatus]) {
+      return;
+    }
+
+    // Rule 3: The unanimous status must be enabled for synchronization.
+    if (!syncSettings[unanimousStatus]) {
+      return;
     }
     
-    // If no unanimous status is found, determine the most logical "floor" status.
-    // The order is only as advanced as its least-advanced service.
-    const statusIndexes = serviceStatuses.map(s => SERVICE_STATUS_FLOW.indexOf(s));
-    const minIndex = Math.min(...statusIndexes);
-    const floorStatus = SERVICE_STATUS_FLOW[minIndex];
-
-    if (order.status !== floorStatus && orderStatusSettings[floorStatus]) {
-        order.status = floorStatus;
+    // Rule 4: If all checks pass, set the order status.
+    if (order.status !== unanimousStatus) {
+      order.status = unanimousStatus;
     }
   }
 
@@ -139,7 +144,8 @@ export const useOrderStore = defineStore('orders', () => {
     const confirmationStore = useConfirmationStore();
 
     const syncMode = settingsStore.appSettings.syncOrderToServiceStatus;
-    if (syncMode === 'none' || !SERVICE_STATUS_FLOW.includes(newStatus)) {
+    // Do not sync if mode is 'none', status is 'accepted', or status is not in the service flow.
+    if (syncMode === 'none' || newStatus === 'accepted' || !SERVICE_STATUS_FLOW.includes(newStatus)) {
         return;
     }
 
