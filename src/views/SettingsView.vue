@@ -68,6 +68,83 @@
           </v-expansion-panel>
         </v-expansion-panels>
 
+        <!-- Управление статусами -->
+        <v-expansion-panels variant="accordion" class="mb-4">
+          <v-expansion-panel>
+            <v-expansion-panel-title>
+              <v-icon class="mr-3">mdi-swap-horizontal-bold</v-icon>
+              Управление статусами
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <v-card flat>
+                <v-card-text>
+                   <v-text-field
+                    v-model="settingsStore.appSettings.additionalStatusName"
+                    label="Название для статуса 'Additional'"
+                    variant="outlined"
+                    dense
+                    class="mb-4"
+                    @update:modelValue="updateAppSettings"
+                  ></v-text-field>
+
+                  <v-divider class="my-4"></v-divider>
+                  <p class="text-subtitle-1 mb-2">Активные статусы</p>
+
+                  <p class="text-caption text-medium-emphasis">Для заказов:</p>
+                  <div class="d-flex flex-wrap ga-2 mb-4">
+                     <v-checkbox v-for="(label, key) in orderStatusLabels" :key="key"
+                      v-model="settingsStore.appSettings.orderStatuses[key]"
+                      :label="label"
+                      :disabled="key === 'accepted'"
+                      color="primary" hide-details @change="updateAppSettings"
+                    ></v-checkbox>
+                  </div>
+
+                  <p class="text-caption text-medium-emphasis">Для услуг:</p>
+                  <div class="d-flex flex-wrap ga-2 mb-4">
+                     <v-checkbox v-for="(label, key) in serviceStatusLabels" :key="key"
+                      v-model="settingsStore.appSettings.serviceStatuses[key]"
+                      :label="label"
+                      :disabled="key === 'accepted'"
+                      color="primary" hide-details @change="updateAppSettings"
+                    ></v-checkbox>
+                  </div>
+
+                  <v-divider class="my-4"></v-divider>
+                  <p class="text-subtitle-1 mb-2">Синхронизация статусов</p>
+
+                  <p class="text-body-2 mb-2">Когда статус заказа меняется, что делать со статусами услуг?</p>
+                  <v-radio-group v-model="settingsStore.appSettings.syncOrderToServiceStatus" inline @change="updateAppSettings">
+                    <v-radio label="Ничего не делать" value="none"></v-radio>
+                    <v-radio label="Синхронизировать" value="auto"></v-radio>
+                    <v-radio label="Спрашивать" value="confirm"></v-radio>
+                  </v-radio-group>
+
+                  <p class="text-body-2 mt-4 mb-2">Автоматически менять статус заказа, если ВСЕ услуги перешли в статус:</p>
+                  <div class="d-flex flex-wrap ga-2">
+                     <v-checkbox
+                      v-model="settingsStore.appSettings.syncServiceToOrderStatus.additional"
+                      :label="settingsStore.appSettings.additionalStatusName"
+                      color="primary" hide-details @change="updateAppSettings"
+                    ></v-checkbox>
+                    <v-checkbox
+                      v-model="settingsStore.appSettings.syncServiceToOrderStatus.in_progress"
+                      label="В работе"
+                      color="primary" hide-details @change="updateAppSettings"
+                    ></v-checkbox>
+                     <v-checkbox
+                      v-model="settingsStore.appSettings.syncServiceToOrderStatus.completed"
+                      label="Выполнено"
+                      color="primary" hide-details @change="updateAppSettings"
+                    ></v-checkbox>
+                  </div>
+
+                </v-card-text>
+              </v-card>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
+
         <!-- Смена темы -->
         <v-expansion-panels variant="accordion" class="mb-4">
           <v-expansion-panel>
@@ -294,7 +371,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useThemeStore } from '@/stores/themeStore';
 import { useClientsStore } from '@/stores/clientsStore';
 import { useSettingsStore } from '@/stores/settingsStore';
@@ -306,6 +383,21 @@ const settingsStore = useSettingsStore();
 const confirmationStore = useConfirmationStore();
 
 const showClientsManager = ref(false);
+
+const orderStatusLabels = computed(() => ({
+  accepted: 'Принят',
+  additional: settingsStore.appSettings.additionalStatusName,
+  in_progress: 'В работе',
+  completed: 'Выполнено',
+  delivered: 'Сдан',
+}));
+
+const serviceStatusLabels = computed(() => ({
+  accepted: 'Принят',
+  additional: settingsStore.appSettings.additionalStatusName,
+  in_progress: 'В работе',
+  completed: 'Выполнено',
+}));
 
 const faqList = ref([
   {

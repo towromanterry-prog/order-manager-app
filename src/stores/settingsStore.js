@@ -14,10 +14,32 @@ export const useSettingsStore = defineStore('settings', () => {
   const appSettings = ref({
     enableHapticFeedback: true,
     enablePullToRefresh: true,
-    defaultOrderStatus: 'in_progress',
+    defaultOrderStatus: 'accepted',
     autoSaveFormDrafts: true,
     showCompletedOrders: true,
-    compactMode: false
+    compactMode: false,
+    // Новые настройки для статусов
+    additionalStatusName: 'Доп. статус',
+    orderStatuses: {
+      accepted: true,
+      additional: true,
+      in_progress: true,
+      completed: true,
+      delivered: true,
+    },
+    serviceStatuses: {
+      accepted: true,
+      additional: true,
+      in_progress: true,
+      completed: true,
+    },
+    syncServiceToOrderStatus: {
+      additional: true,
+      in_progress: true,
+      completed: true,
+    },
+    syncOrderToServiceStatus: 'confirm', // 'none' | 'auto' | 'confirm'
+    syncOrderToServiceStatusWithWarning: true,
   });
   
   function loadSettings() {
@@ -76,10 +98,31 @@ export const useSettingsStore = defineStore('settings', () => {
     appSettings.value = {
       enableHapticFeedback: true,
       enablePullToRefresh: true,
-      defaultOrderStatus: 'in_progress',
+      defaultOrderStatus: 'accepted',
       autoSaveFormDrafts: true,
       showCompletedOrders: true,
-      compactMode: false
+      compactMode: false,
+      additionalStatusName: 'Доп. статус',
+      orderStatuses: {
+        accepted: true,
+        additional: true,
+        in_progress: true,
+        completed: true,
+        delivered: true,
+      },
+      serviceStatuses: {
+        accepted: true,
+        additional: true,
+        in_progress: true,
+        completed: true,
+      },
+      syncServiceToOrderStatus: {
+        additional: true,
+        in_progress: true,
+        completed: true,
+      },
+      syncOrderToServiceStatus: 'confirm',
+      syncOrderToServiceStatusWithWarning: true,
     };
     
     localStorage.removeItem('requiredFields');
