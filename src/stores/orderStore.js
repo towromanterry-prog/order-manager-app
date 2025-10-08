@@ -111,23 +111,26 @@ export const useOrderStore = defineStore('orders', () => {
     if (!order.services || order.services.length === 0) return;
 
     const serviceStatuses = order.services.map(s => s.status);
+    const statusesToSync = ['completed', 'in_progress', 'additional', 'accepted']; // Order of precedence
 
-    // Rule 1: If ALL services are 'completed', the order becomes 'completed'.
-    if (syncSettings.completed && orderStatusSettings.completed && serviceStatuses.every(s => s === 'completed')) {
-      if (order.status !== 'completed') order.status = 'completed';
-      return;
+    // Check if all services have the same status and if that status is enabled for sync.
+    for (const status of statusesToSync) {
+      if (syncSettings[status] && orderStatusSettings[status] && serviceStatuses.every(s => s === status)) {
+        if (order.status !== status) {
+          order.status = status;
+        }
+        return; // Sync complete, exit.
+      }
     }
     
-    // Rule 2: If there's at least one 'in_progress', the order becomes 'in_progress'.
-    if (syncSettings.in_progress && orderStatusSettings.in_progress && serviceStatuses.includes('in_progress')) {
-        if(order.status !== 'in_progress') order.status = 'in_progress';
-        return;
-    }
+    // If no unanimous status is found, determine the most logical "floor" status.
+    // The order is only as advanced as its least-advanced service.
+    const statusIndexes = serviceStatuses.map(s => SERVICE_STATUS_FLOW.indexOf(s));
+    const minIndex = Math.min(...statusIndexes);
+    const floorStatus = SERVICE_STATUS_FLOW[minIndex];
 
-    // Rule 3: If there's at least one 'additional', and none are 'in_progress', order becomes 'additional'.
-    if (syncSettings.additional && orderStatusSettings.additional && serviceStatuses.includes('additional') && !serviceStatuses.includes('in_progress')) {
-        if (order.status !== 'additional') order.status = 'additional';
-        return;
+    if (order.status !== floorStatus && orderStatusSettings[floorStatus]) {
+        order.status = floorStatus;
     }
   }
 
@@ -157,10 +160,11 @@ export const useOrderStore = defineStore('orders', () => {
     }
   }
 
-  async function updateStatus(orderId, newStatus, isService = false, serviceIndex = -1) {
+  async function updateStatus(orderId, newStatus, isService = false, serviceIndex = -1, isLongPress = false) {
     const order = orders.value.find(o => o.id === orderId);
     if (!order) return;
 
+    const settingsStore = useSettingsStore();
     const confirmationStore = useConfirmationStore();
     
     const flow = isService ? SERVICE_STATUS_FLOW : ORDER_STATUS_FLOW;
@@ -169,7 +173,20 @@ export const useOrderStore = defineStore('orders', () => {
     const oldIndex = flow.indexOf(oldStatus);
     const newIndex = flow.indexOf(newStatus);
 
-    if (newIndex < oldIndex && oldStatus !== 'cancelled') {
+    const activeStatuses = isService ? settingsStore.appSettings.serviceStatuses : settingsStore.appSettings.orderStatuses;
+    const activeFlow = flow.filter(s => activeStatuses[s]);
+    const lastActiveStatusInFlow = activeFlow[activeFlow.length - 1];
+
+    // Case 1: Circular loop (and not a long press)
+    if (!isLongPress && oldStatus === lastActiveStatusInFlow && newStatus === flow[0]) {
+      const confirmed = await confirmationStore.open(
+        'Начать сначала?',
+        `Вы уверены, что хотите вернуть статус с "${getStatusText(oldStatus)}" на начальный статус "${getStatusText(newStatus)}"?`
+      );
+      if (!confirmed) return;
+    }
+    // Case 2: Any other downgrade (including long press)
+    else if (newIndex < oldIndex && oldStatus !== 'cancelled') {
       const confirmed = await confirmationStore.open(
         'Понижение статуса',
         `Вы уверены, что хотите изменить статус с "${getStatusText(oldStatus)}" на "${getStatusText(newStatus)}"?`
@@ -196,17 +213,47 @@ export const useOrderStore = defineStore('orders', () => {
 
     const currentIndex = flow.indexOf(currentStatus);
 
-    if (currentIndex === -1 || currentIndex === flow.length - 1) {
-      return currentStatus;
+    if (currentIndex === -1) {
+        return currentStatus;
     }
 
+    // Find the next active status in the sequence.
     for (let i = currentIndex + 1; i < flow.length; i++) {
       const nextStatus = flow[i];
       if (activeStatuses[nextStatus]) {
-        return nextStatus;
+        return nextStatus; // Return the first one found.
       }
     }
-    return currentStatus;
+
+    // If no subsequent active status is found, loop back to the first status.
+    // 'accepted' is always active, so flow[0] is a safe bet.
+    if (activeStatuses[flow[0]]) {
+      return flow[0];
+    }
+
+    return currentStatus; // Should not happen if 'accepted' is always active.
+  }
+
+  function calculatePreviousStatus(currentStatus, isService = false) {
+    const settingsStore = useSettingsStore();
+    const flow = isService ? SERVICE_STATUS_FLOW : ORDER_STATUS_FLOW;
+    const activeStatuses = isService ? settingsStore.appSettings.serviceStatuses : settingsStore.appSettings.orderStatuses;
+
+    const currentIndex = flow.indexOf(currentStatus);
+
+    if (currentIndex <= 0) { // If it's the first status or not found
+        return currentStatus;
+    }
+
+    // Find the previous active status in the sequence.
+    for (let i = currentIndex - 1; i >= 0; i--) {
+      const prevStatus = flow[i];
+      if (activeStatuses[prevStatus]) {
+        return prevStatus; // Return the first one found.
+      }
+    }
+
+    return currentStatus; // If no previous active status is found
   }
 
   async function cancelOrder(orderId) {
@@ -300,6 +347,7 @@ export const useOrderStore = defineStore('orders', () => {
     deleteOrder,
     updateStatus,
     calculateNextStatus,
+    calculatePreviousStatus,
     cancelOrder,
     undoCancelOrder,
     updateServicePricesInActiveOrders,

@@ -20,7 +20,12 @@
       </div>
       <!-- Статус и цена -->
       <div class="text-right">
-        <StatusIndicator :status="order.status" @click.stop="changeOrderStatus" class="mb-2"/>
+        <StatusIndicator
+          :status="order.status"
+          @click.stop="changeOrderStatus"
+          @long-press.stop="previousOrderStatus"
+          class="mb-2"
+        />
         <div class="text-h6 font-weight-bold text-primary">{{ totalAmount }}₽</div>
       </div>
     </v-card-text>
@@ -37,7 +42,11 @@
               <span class="text-body-2">{{ service.name }}</span>
               <v-spacer></v-spacer>
               <span class="text-body-2 mr-4">{{ service.price }}₽</span>
-              <StatusIndicator :status="service.status" @click.stop="changeServiceStatus(index)" />
+              <StatusIndicator
+                :status="service.status"
+                @click.stop="changeServiceStatus(index)"
+                @long-press.stop="previousServiceStatus(index)"
+              />
             </div>
           </div>
 
@@ -118,12 +127,29 @@ const changeOrderStatus = () => {
   }
 };
 
+const previousOrderStatus = () => {
+  if (props.order.status === 'cancelled') return;
+  const prevStatus = orderStore.calculatePreviousStatus(props.order.status, false);
+  if (prevStatus !== props.order.status) {
+      orderStore.updateStatus(props.order.id, prevStatus, false, -1, true);
+  }
+};
+
 const changeServiceStatus = (serviceIndex) => {
     const service = props.order.services[serviceIndex];
     if (service.status === 'cancelled') return;
     const nextStatus = orderStore.calculateNextStatus(service.status, true);
     if (nextStatus !== service.status) {
         orderStore.updateStatus(props.order.id, nextStatus, true, serviceIndex);
+    }
+};
+
+const previousServiceStatus = (serviceIndex) => {
+    const service = props.order.services[serviceIndex];
+    if (service.status === 'cancelled') return;
+    const prevStatus = orderStore.calculatePreviousStatus(service.status, true);
+    if (prevStatus !== service.status) {
+        orderStore.updateStatus(props.order.id, prevStatus, true, serviceIndex, true);
     }
 };
 
