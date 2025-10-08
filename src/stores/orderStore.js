@@ -123,7 +123,7 @@ export const useOrderStore = defineStore('orders', () => {
 
     const unanimousStatus = firstServiceStatus;
 
-    // Rule 2: The target status MUST be active in the order status settings. This is the fix.
+    // Rule 2: The target status MUST be active in the order status settings.
     if (!orderStatusSettings[unanimousStatus]) {
       return;
     }
@@ -133,16 +133,8 @@ export const useOrderStore = defineStore('orders', () => {
       return;
     }
     
-    // Rule 4: Never sync to 'accepted', as this is an initial state.
-    if (unanimousStatus === 'accepted') {
-        return;
-    }
-
-    // Rule 5: The change must be an upgrade. Never downgrade the order status automatically.
-    const orderStatusIndex = ORDER_STATUS_FLOW.indexOf(order.status);
-    const unanimousStatusIndex = ORDER_STATUS_FLOW.indexOf(unanimousStatus);
-
-    if (unanimousStatusIndex > orderStatusIndex) {
+    // Rule 4: If all checks pass, set the order status.
+    if (order.status !== unanimousStatus) {
       order.status = unanimousStatus;
     }
   }

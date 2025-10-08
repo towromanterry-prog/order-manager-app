@@ -12,6 +12,7 @@
     @mouseleave="cancelPress"
     @touchstart.prevent="startPress"
     @touchend.prevent="endPress"
+    @touchcancel.prevent="cancelPress"
   >
     {{ statusInfo.text }}
   </v-chip>
@@ -36,27 +37,26 @@ const emit = defineEmits(['click', 'long-press']);
 
 const orderStore = useOrderStore();
 const pressTimer = ref(null);
+const isLongPress = ref(false);
 
 const startPress = () => {
+  isLongPress.value = false;
   pressTimer.value = setTimeout(() => {
+    isLongPress.value = true;
     emit('long-press');
-    pressTimer.value = null; // Mark that long press has fired
-  }, 700); // 700ms for a long press
+  }, 700);
 };
 
 const endPress = (event) => {
-  if (pressTimer.value) {
-    clearTimeout(pressTimer.value);
-    // It's a regular click because the timer was cleared before it fired.
+  clearTimeout(pressTimer.value);
+  if (isLongPress.value === false) {
     emit('click', event);
   }
 };
 
 const cancelPress = () => {
-    if (pressTimer.value) {
-        clearTimeout(pressTimer.value);
-    }
-}
+  clearTimeout(pressTimer.value);
+};
 
 const statusInfo = computed(() => {
   const text = orderStore.getStatusText(props.status);
